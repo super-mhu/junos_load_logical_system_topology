@@ -1,0 +1,1352 @@
+logical-systems {
+    r1 {
+        interfaces {
+            lt-0/0/0 {
+                unit 12 {
+                    encapsulation ethernet;
+                    peer-unit 21;
+                    family inet {
+                        address 12.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 13 {
+                    encapsulation ethernet;
+                    peer-unit 31;
+                    family inet {       
+                        address 13.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 17 {
+                    encapsulation ethernet;
+                    peer-unit 71;
+                    family inet {
+                        address 17.0.0.1/30;
+                    }
+                }
+            }
+            ge-1/0/1 {
+                unit 0;
+            }
+            lo0 {
+                unit 1 {
+                    family inet {
+                        filter {
+                            input protect-re;
+                        }
+                        address 1.1.1.1/32 {
+                            preferred;
+                        }
+                        address 1.1.1.11/32;
+                    }
+                }
+                unit 11 {
+                    family inet {
+                        address 11.11.11.11/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            rsvp {
+                no-local-reversion; ## FRR local-reversion disabled by default
+                load-balance bandwidth;
+                interface lt-0/0/0.12 {
+                    link-protection;
+                }
+                interface lt-0/0/0.13 {
+                    link-protection;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r1-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r1-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r1-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r1-r5 {
+                    to 5.5.5.5;         
+                }
+                label-switched-path r1-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            bgp {
+                group ibgp {
+                    type internal;
+                    local-address 1.1.1.1;
+                    family inet {
+                        unicast;
+                    }
+                    family inet-vpn {
+                        unicast;
+                        multicast;
+                    }
+                    family inet-mdt {
+                        signaling;
+                    }
+                    neighbor 4.4.4.4;
+                    neighbor 5.5.5.5;
+                }
+            }
+            ospf {
+                traffic-engineering;
+                reference-bandwidth 10g;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.12 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.13 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lo0.1 {
+                        passive;
+                    }
+                }
+            }
+            ldp {
+                interface all;
+            }
+            pim {
+                rp {
+                    static {
+                        address 3.3.3.3;
+                    }
+                }
+                interface lo0.1 {       
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+                interface all {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+            }
+            l2circuit {
+                neighbor 6.6.6.6 {
+                    interface ge-1/0/1.0 {
+                        virtual-circuit-id 1001;
+                    }
+                }
+            }
+        }
+        policy-options {
+            policy-statement bgp-ospf {
+                term 1 {
+                    from protocol bgp;
+                    then accept;
+                }
+            }
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-instances {
+            mvpn-test {
+                instance-type vrf;
+                interface lt-0/0/0.17;
+                interface lo0.11;
+                route-distinguisher 11.11.11.11:1;
+                provider-tunnel {
+                    pim-ssm {
+                        group-address 232.1.1.1;
+                    }
+                }
+                vrf-target target:1:1;
+                vrf-table-label;
+                protocols {
+                    ospf {
+                        export bgp-ospf;
+                        area 0.0.0.0 {
+                            interface lt-0/0/0.17;
+                        }
+                    }
+                    pim {
+                        mvpn {
+                            family {
+                                inet {
+                                    autodiscovery {
+                                        inet-mdt;
+                                    }
+                                }       
+                            }
+                        }
+                        interface lo0.11;
+                        interface lt-0/0/0.17;
+                    }
+                    mvpn {
+                        family {
+                            inet {
+                                autodiscovery-only {
+                                    intra-as {
+                                        inclusive;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        routing-options {
+            autonomous-system 100;
+            forwarding-table {
+                export load-balance;
+            }
+        }
+        firewall {
+            family inet {
+                filter protect-re {
+                    term 1 {
+                        from {
+                            destination-address {
+                                224.0.0.2/32;
+                            }
+                            protocol udp;
+                            port ldp;
+                        }
+                        then accept;
+                    }
+                    term 2 {
+                        from {
+                            source-address {
+                                6.6.6.6/32;
+                            }
+                            protocol [ tcp udp ];
+                            port ldp;
+                        }
+                        then accept;
+                    }
+                    term 3 {
+                        from {
+                            protocol ospf;
+                        }
+                        then accept;
+                    }
+                    term 4 {
+                        from {
+                            protocol pim;
+                        }
+                        then accept;    
+                    }
+                    term 5 {
+                        from {
+                            protocol rsvp;
+                        }
+                        then accept;
+                    }
+                    term 6 {
+                        from {
+                            protocol tcp;
+                            port bgp;
+                        }
+                        then accept;
+                    }
+                    term last {
+                        then {
+                            reject;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    r2 {
+        interfaces {
+            lt-0/0/0 {
+                unit 21 {
+                    encapsulation ethernet;
+                    peer-unit 12;
+                    family inet {
+                        address 12.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 23 {
+                    encapsulation ethernet;
+                    peer-unit 32;
+                    family inet {
+                        address 23.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 24 {
+                    encapsulation ethernet;
+                    peer-unit 42;
+                    family inet {
+                        address 24.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 25 {
+                    encapsulation ethernet;
+                    peer-unit 52;
+                    family inet {
+                        address 25.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }                           
+            lo0 {
+                unit 2 {
+                    family inet {
+                        address 2.2.2.2/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            rsvp {
+                no-local-reversion; ## FRR local-reversion disabled by default
+                load-balance bandwidth;
+                interface lt-0/0/0.21 {
+                    link-protection;
+                }
+                interface lt-0/0/0.23 {
+                    link-protection;
+                }
+                interface lt-0/0/0.24 {
+                    link-protection;
+                }
+                interface lt-0/0/0.25 {
+                    link-protection;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r2-r1 {
+                    to 1.1.1.1;
+                }
+                label-switched-path r2-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r2-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r2-r5 {
+                    to 5.5.5.5;
+                }
+                label-switched-path r2-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                reference-bandwidth 10g;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.21 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.23 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.24 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.25 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lo0.2 {
+                        passive;
+                    }
+                }
+            }
+            ldp {
+                interface all;
+            }
+            pim {
+                rp {
+                    static {
+                        address 3.3.3.3;
+                    }
+                }
+                interface lo0.2 {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+                interface all {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }                           
+        }
+    }
+    r3 {
+        interfaces {
+            lt-0/0/0 {
+                unit 31 {
+                    encapsulation ethernet;
+                    peer-unit 13;
+                    family inet {
+                        address 13.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 32 {
+                    encapsulation ethernet;
+                    peer-unit 23;
+                    family inet {
+                        address 23.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 34 {
+                    encapsulation ethernet;
+                    peer-unit 43;
+                    family inet {
+                        address 34.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 35 {
+                    encapsulation ethernet;
+                    peer-unit 53;
+                    family inet {
+                        address 35.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 3 {
+                    family inet {
+                        address 3.3.3.3/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            rsvp {
+                no-local-reversion; ## FRR local-reversion disabled by default
+                load-balance bandwidth;
+                interface lt-0/0/0.31 {
+                    link-protection;
+                }
+                interface lt-0/0/0.32 {
+                    link-protection;
+                }
+                interface lt-0/0/0.34 {
+                    link-protection;
+                }                       
+                interface lt-0/0/0.35 {
+                    link-protection;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r3-r1 {
+                    to 1.1.1.1;
+                }
+                label-switched-path r3-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r3-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r3-r5 {
+                    to 5.5.5.5;
+                }
+                label-switched-path r3-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                reference-bandwidth 10g;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.31 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.32 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.34 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.35 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }               
+                    }
+                    interface lo0.3 {
+                        passive;
+                    }
+                }
+            }
+            ldp {
+                interface all;
+            }
+            pim {
+                rp {
+                    local {
+                        address 3.3.3.3;
+                    }
+                }
+                interface lo0.3 {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+                interface all {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r4 {
+        interfaces {
+            lt-0/0/0 {
+                unit 42 {
+                    encapsulation ethernet;
+                    peer-unit 24;
+                    family inet {
+                        address 24.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 43 {
+                    encapsulation ethernet;
+                    peer-unit 34;
+                    family inet {
+                        address 34.0.0.2/30;
+                    }
+                    family mpls;
+                }                       
+                unit 45 {
+                    encapsulation ethernet;
+                    peer-unit 54;
+                    family inet {
+                        address 45.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 46 {
+                    encapsulation ethernet;
+                    peer-unit 64;
+                    family inet {
+                        address 46.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 48 {
+                    encapsulation ethernet;
+                    peer-unit 84;
+                    family inet {
+                        address 48.0.0.1/30;
+                    }
+                }
+            }
+            lo0 {
+                unit 4 {
+                    family inet {
+                        address 4.4.4.4/32;
+                    }
+                }
+                unit 44 {
+                    family inet {
+                        address 44.44.44.44/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            rsvp {
+                no-local-reversion; ## FRR local-reversion disabled by default
+                load-balance bandwidth;
+                interface lt-0/0/0.42 {
+                    link-protection;
+                }
+                interface lt-0/0/0.43 {
+                    link-protection;
+                }
+                interface lt-0/0/0.45 {
+                    link-protection;
+                }
+                interface lt-0/0/0.46 {
+                    link-protection;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r4-r1 {
+                    to 1.1.1.1;         
+                }
+                label-switched-path r4-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r4-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r4-r5 {
+                    to 5.5.5.5;
+                }
+                label-switched-path r4-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            bgp {
+                group ibgp {
+                    type internal;
+                    local-address 4.4.4.4;
+                    family inet {
+                        unicast;
+                    }
+                    family inet-vpn {
+                        unicast;
+                        multicast;
+                    }
+                    family inet-mdt {
+                        signaling;
+                    }
+                    neighbor 1.1.1.1;
+                    neighbor 5.5.5.5;
+                }
+            }
+            ospf {
+                traffic-engineering;
+                reference-bandwidth 10g;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.42 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.43 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.45 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.46 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lo0.4 {
+                        passive;
+                    }
+                }
+            }
+            ldp {
+                interface all;
+            }
+            pim {
+                rp {
+                    static {
+                        address 3.3.3.3;
+                    }
+                }
+                interface lo0.4 {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+                interface all {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+            }
+        }
+        policy-options {
+            policy-statement bgp-ospf {
+                term 1 {
+                    from protocol bgp;
+                    then accept;
+                }
+            }
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-instances {
+            mvpn-test {
+                instance-type vrf;
+                interface lt-0/0/0.48;
+                interface lo0.44;
+                route-distinguisher 44.44.44.44:1;
+                provider-tunnel {
+                    pim-ssm {
+                        group-address 232.1.1.1;
+                    }                   
+                }
+                vrf-target target:1:1;
+                vrf-table-label;
+                protocols {
+                    ospf {
+                        export bgp-ospf;
+                        area 0.0.0.0 {
+                            interface lt-0/0/0.48;
+                        }
+                    }
+                    pim {
+                        mvpn {
+                            family {
+                                inet {
+                                    autodiscovery {
+                                        inet-mdt;
+                                    }
+                                }
+                            }
+                        }
+                        interface lo0.44;
+                        interface lt-0/0/0.48;
+                    }
+                    mvpn {
+                        family {
+                            inet {
+                                autodiscovery-only {
+                                    intra-as {
+                                        inclusive;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        routing-options {
+            autonomous-system 100;
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r5 {
+        interfaces {
+            lt-0/0/0 {
+                unit 52 {
+                    encapsulation ethernet;
+                    peer-unit 25;
+                    family inet {
+                        address 25.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 53 {
+                    encapsulation ethernet;
+                    peer-unit 35;
+                    family inet {       
+                        address 35.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 54 {
+                    encapsulation ethernet;
+                    peer-unit 45;
+                    family inet {
+                        address 45.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 56 {
+                    encapsulation ethernet;
+                    peer-unit 65;
+                    family inet {
+                        address 56.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 59 {
+                    encapsulation ethernet;
+                    peer-unit 95;
+                    family inet {
+                        address 59.0.0.1/30;
+                    }
+                }
+            }
+            lo0 {
+                unit 5 {
+                    family inet {
+                        address 5.5.5.5/32;
+                    }
+                }
+                unit 55 {
+                    family inet {
+                        address 55.55.55.55/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            rsvp {
+                no-local-reversion; ## FRR local-reversion disabled by default
+                load-balance bandwidth;
+                interface lt-0/0/0.52 {
+                    link-protection;
+                }
+                interface lt-0/0/0.53 {
+                    link-protection;
+                }
+                interface lt-0/0/0.54 {
+                    link-protection;
+                }
+                interface lt-0/0/0.56 {
+                    link-protection;
+                }
+            }
+            mpls {                      
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r5-r1 {
+                    to 1.1.1.1;
+                }
+                label-switched-path r5-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r5-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r5-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r5-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            bgp {
+                group ibgp {
+                    type internal;
+                    local-address 5.5.5.5;
+                    family inet {
+                        unicast;
+                    }
+                    family inet-vpn {
+                        unicast;
+                        multicast;
+                    }
+                    family inet-mdt {
+                        signaling;
+                    }
+                    neighbor 1.1.1.1;
+                    neighbor 4.4.4.4;
+                }
+            }
+            ospf {
+                traffic-engineering;
+                reference-bandwidth 10g;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.52 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.53 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.54 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.56 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lo0.5 {
+                        passive;
+                    }
+                }
+            }
+            ldp {
+                interface all;
+            }
+            pim {
+                rp {
+                    static {
+                        address 3.3.3.3;
+                    }
+                }
+                interface lo0.5 {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+                interface all {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+            }
+        }
+        policy-options {
+            policy-statement bgp-ospf {
+                term 1 {
+                    from protocol bgp;
+                    then accept;
+                }
+            }
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-instances {
+            mvpn-test {
+                instance-type vrf;
+                interface lt-0/0/0.59;
+                interface lo0.55;
+                route-distinguisher 55.55.55.55:1;
+                provider-tunnel {
+                    pim-ssm {
+                        group-address 232.1.1.1;
+                    }
+                }
+                vrf-target target:1:1;
+                vrf-table-label;
+                protocols {
+                    ospf {
+                        export bgp-ospf;
+                        area 0.0.0.0 {
+                            interface lt-0/0/0.59;
+                        }
+                    }
+                    pim {
+                        mvpn {
+                            family {
+                                inet {
+                                    autodiscovery {
+                                        inet-mdt;
+                                    }
+                                }
+                            }
+                        }
+                        interface lo0.55;
+                        interface lt-0/0/0.59;
+                    }
+                    mvpn {
+                        family {
+                            inet {
+                                autodiscovery-only {
+                                    intra-as {
+                                        inclusive;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        routing-options {
+            autonomous-system 100;
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r6 {
+        interfaces {
+            lt-0/0/0 {
+                unit 64 {
+                    encapsulation ethernet;
+                    peer-unit 46;
+                    family inet {
+                        address 46.0.0.2/30;
+                    }
+                    family mpls;
+                }                       
+                unit 65 {
+                    encapsulation ethernet;
+                    peer-unit 56;
+                    family inet {
+                        address 56.0.0.2/30;
+                    }
+                    family mpls;
+                }
+            }
+            ge-1/0/2 {
+                unit 0;
+            }
+            lo0 {
+                unit 6 {
+                    family inet {
+                        filter {
+                            input protect-re;
+                        }
+                        address 6.6.6.6/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            rsvp {
+                no-local-reversion; ## FRR local-reversion disabled by default
+                load-balance bandwidth;
+                interface lt-0/0/0.64 {
+                    link-protection;
+                }
+                interface lt-0/0/0.65 {
+                    link-protection;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r6-r1 {
+                    to 1.1.1.1;
+                }
+                label-switched-path r6-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r6-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r6-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r6-r5 {
+                    to 5.5.5.5;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                reference-bandwidth 10g;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.64 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lt-0/0/0.65 {
+                        interface-type p2p;
+                        bfd-liveness-detection {
+                            minimum-interval 1000;
+                            multiplier 3;
+                            full-neighbors-only;
+                        }
+                    }
+                    interface lo0.6 {
+                        passive;
+                    }
+                }
+            }
+            ldp {
+                interface all;
+            }
+            pim {
+                rp {
+                    static {
+                        address 3.3.3.3;
+                    }
+                }
+                interface lo0.6 {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+                interface all {
+                    mode sparse;
+                    version 2; ## Warning: 'version' is deprecated
+                }
+            }
+            l2circuit {
+                neighbor 1.1.1.1 {
+                    interface ge-1/0/2.0 {
+                        virtual-circuit-id 1001;
+                    }
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }                           
+        }
+        firewall {
+            family inet {
+                filter protect-re {
+                    term 1 {
+                        from {
+                            destination-address {
+                                224.0.0.2/32;
+                            }
+                            protocol udp;
+                            port ldp;
+                        }
+                        then accept;
+                    }
+                    term 2 {
+                        from {
+                            source-address {
+                                1.1.1.1/32;
+                            }
+                            protocol [ tcp udp ];
+                            port ldp;
+                        }
+                        then accept;
+                    }
+                    term 3 {
+                        from {
+                            protocol ospf;
+                        }
+                        then accept;
+                    }
+                    term 4 {
+                        from {
+                            protocol pim;
+                        }
+                        then accept;
+                    }
+                    term 5 {
+                        from {
+                            protocol rsvp;
+                        }
+                        then accept;
+                    }
+                    term 6 {
+                        from {
+                            protocol tcp;
+                            port bgp;
+                        }
+                        then accept;
+                    }
+                    term last {
+                        then {
+                            reject;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    r7 {                                
+        interfaces {
+            lt-0/0/0 {
+                unit 71 {
+                    encapsulation ethernet;
+                    peer-unit 17;
+                    family inet {
+                        address 17.0.0.2/30;
+                    }
+                }
+            }
+        }
+        protocols {
+            ospf {
+                area 0.0.0.0 {
+                    interface lt-0/0/0.71;
+                }
+            }
+            pim {
+                interface lt-0/0/0.71;
+            }
+        }
+    }
+    r8 {
+        interfaces {
+            lt-0/0/0 {
+                unit 84 {
+                    encapsulation ethernet;
+                    peer-unit 48;
+                    family inet {
+                        address 48.0.0.2/30;
+                    }
+                }
+            }
+        }
+        protocols {
+            ospf {
+                area 0.0.0.0 {
+                    interface lt-0/0/0.84;
+                }
+            }
+            pim {
+                interface lt-0/0/0.84;
+            }
+        }
+    }
+    r9 {
+        interfaces {
+            lt-0/0/0 {
+                unit 95 {
+                    encapsulation ethernet;
+                    peer-unit 59;
+                    family inet {
+                        address 59.0.0.2/30;
+                    }
+                }
+            }
+            xe-0/0/1 {
+                unit 0 {
+                    family inet {       
+                        address 192.168.99.1/24;
+                    }
+                }
+            }
+        }
+        protocols {
+            igmp {
+                interface xe-0/0/1.0 {
+                    version 3;
+                    static {
+                        group 224.100.100.1 {
+                            source 17.0.0.2;
+                        }
+                        group 224.100.100.2;
+                    }
+                }
+            }
+            ospf {
+                area 0.0.0.0 {
+                    interface lt-0/0/0.95;
+                }
+            }
+            pim {
+                interface lt-0/0/0.95;
+            }
+        }
+    }
+}
+chassis {
+    fpc 0 {
+        pic 0 {
+            tunnel-services {
+                bandwidth 1g;
+            }
+        }
+    }
+}
+

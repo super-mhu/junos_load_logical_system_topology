@@ -1,0 +1,326 @@
+**************************************************************************************************************************************
+[1 OSPF Multi Area] file: 1_ospf_multi_area.txt
+**************************************************************************************************************************************
+
+->Topology:
+
+           +----+        +----+
+  +--------+ r2 +--------+ r4 +---------+
+  |        +--+-+        +--+-+         |
++-+-+         |   x   x    |         +--+-+
+|r1 |         |     x      |         | r6 |
++-+-+         |   x   x    |         +--+-+
+  |        +--+-+        +--+-+         |
+  +--------+ r3 +--------+ r5 +---------+
+           +----+        +----+
+
+                -> LAB brief:
+                 - R1 in OSPF area 1 
+                 - R2/R3/R4/R5 in OSPF area 0 as ABR
+                 - R6 in OSPF area 2 nssa
+
+                -> Use cases:
+                 - OSPF import/export policies
+                 - OSPF stub/NSSA
+                 - OSPFv3 realm 
+
+                -> Additional Instruction:
+                N/A
+
+**************************************************************************************************************************************
+[2 ISIS Level 1&2] file: 2_isis_level_12.txt
+**************************************************************************************************************************************
+
+->Topology:
+
+           +----+        +----+
+  +--------+ r2 +--------+ r4 +---------+
+  |        +--+-+        +--+-+         |
++-+-+         |   x   x    |         +--+-+
+|r1 |         |     x      |         | r6 |
++-+-+         |   x   x    |         +--+-+
+  |        +--+-+        +--+-+         |
+  +--------+ r3 +--------+ r5 +---------+
+           +----+        +----+
+
+                -> LAB brief:
+                 - R1/R2/R3 in area 49.0001 
+                 - R4/R5/R6 in area 49.0002 
+                 - R1/R6 are level 1 routers
+                 - R2/R3/R4/R5 are level 1 and 2 routers
+
+                -> Use cases:
+                 - ISIS import/export policies
+                 - ISIS for IPv4 and IPv6  
+
+                -> Additional Instruction:
+                N/A
+
+
+**************************************************************************************************************************************
+[3 BGP with Route Reflector] file: 3_bgp_with_rr_config.txt
+**************************************************************************************************************************************
+
+->Topology:
+
+                    +----+        +----+
+           +--------+ r2 +--------+ r4 +----------+
+           |        +--+-+        +--+-+          |
+         +-+-+         |   x   x     |         +--+-+
+ +-------+r1 |         |     x       |         | r6 +-----+
+ +       +-+-+         |   x   x     |         +--+-+     +
+ce1        |        +--+-+        +--+-+          |      ce2
+           +--------+ r3 +--------+ r5 +----------+
+                    +----+        +----+
+
+                -> LAB brief:
+                 - R1/R2/R3/R4/R5/R6 in the MPLS core running OSPF/MPLS/RSVP, AS65000
+                 - R1/R6 are RR clients
+                 - R2/R4 are RRs with different cluster ID
+                 - CE1 is EBGP peer in AS100. CE2 is EBGP peer in AS200 
+
+                -> Use cases:
+                 - EBGP
+                 - IBGP with route reflector 
+                 - 6PE 
+
+                -> Additional Instruction:
+                 N/A 
+
+
+************************************************************************************************************************************** 
+[4 VRRP] file: 4_vrrp.txt
+**************************************************************************************************************************************
+
+->Topology:
+
++----+                   +----+
+| r1 |                   | r2 |
++-+--+                   +--+-+
+  |                         |
+  |                         |
+  |        +-------+        |
+  +--------+  sw   +--------+
+           +---+---+
+               |
+               |
+            +--+--+
+            |host |
+            +-----+
+
+                -> LAB brief:
+                 - R1/R2 are VRRP master and backup
+                 - SW is a layer 2 switch in vlan 100
+                 - HOST is in same subnet as VRRP group 
+
+                -> Use cases:
+                 - VRRPv4
+                 - VRRPv6
+
+                -> Additional Instruction:
+                 N/A 
+
+
+
+**************************************************************************************************************************************
+[5 MPLS CORE] file: 5_mpls_core.txt
+**************************************************************************************************************************************
+
+-> Topology:
+
+           +----+        +----+
+  +--------+ r2 +--------+ r4 +---------+
+  |        +--+-+        +--+-+         |
++-+-+         |   x   x    |         +--+-+
+|r1 |         |     x      |         | r6 |
++-+-+         |   x   x    |         +--+-+
+  |        +--+-+        +--+-+         |
+  +--------+ r3 +--------+ r5 +---------+
+           +----+        +----+
+
+                -> LAB brief:
+                 - R1/R2/R3/R4/R5/R6 in the MPLS core running OSPF/MPLS/RSVP
+                 - Full mesh RSVP LSP created for all 
+                 - LDP enabled on all loopbacks and p2p connections 
+
+                -> Use Case:
+                 - Link protection / FRR testing 
+                 - 6PE / 6VPE
+                 - LDP-TUNNELING 
+                 - L3VPN
+                 - L2VPN/L2CIRCUIT/VPLS
+                 
+
+                -> Additional Instruction:
+                 - If any CE device needs to be connected, recommend to make a physical loop. One side connect to PE and another side connect to CE. 
+                 - Using lt as PE-CE connection can be provided in the future. But there's limitation for lt as PE-CE connection
+
+
+
+**************************************************************************************************************************************
+[6 Multicast PIM Sparse Mode] file: 6_mcast_pim.txt
+**************************************************************************************************************************************
+
+->Topology:
+
+                                     +----+rcv1
+                                     |
+                     +----+        +-+--+
+            +--------+ r2 +--------+ r4 +---------+
+            |        +--+-+        +-+--+         |
+          +-+-+         |   x   x    |         +--+-+
+ +--------+r1 |         |     x      |         | r6 |
+ +        +-+-+         |   x   x    |         +--+-+
+src         |        +--+-+        +-+--+         |
+            +--------+ r3 +--------+ r5 +---------+
+                     +----+        +--+-+
+                                      |
+                                      +---+rcv2
+
+                -> LAB brief:
+                 - R1/R2/R3/R4/R5/R6 running PIM Sparse Mode 
+                 - R2 is acting as RP
+                 - R1 is connected to SRC
+                 - R4 and R5 are both connected to RCV (static IGMP join)
+                 - ASM group (*, 224.100.100.1) (17.0.0.2, 224.100.100.1)
+                 - SSM group (17.0.0.2, 232.100.100.100)
+
+                -> Use cases:
+                 - PIM Sparse mode 
+                 - RPT to SPT switchover
+                 - Multicast control/data plane troubleshooting 
+
+                -> Additional Instruction:
+                        -> To generate Ping traffic 
+                        >ping 224.100.100.1 bypass-routing logical-system src interface lt-0/0/10.71 interval .1 ttl 10   
+                        >ping 232.100.100.100 bypass-routing logical-system src interface lt-0/0/10.71 interval .1 ttl 10 
+
+                        -> To simulate multicast hosts
+                        set logical-systems r4 protocols igmp interface xe-0/0/0.0 static group 224.100.100.1
+                        set logical-systems r4 protocols igmp interface xe-0/0/0.0 static group 232.100.100.100 source 17.0.0.2
+                        set logical-systems r5 protocols igmp interface xe-0/0/1.0 static group 224.100.100.1
+                        set logical-systems r5 protocols igmp interface xe-0/0/1.0 static group 232.100.100.100 source 17.0.0.2
+
+
+**************************************************************************************************************************************
+[7 Multicast VPN Draft Rosen] file: 7_mcast_mvpn_draft_rosen.txt
+**************************************************************************************************************************************
+
+->Topology:
+                                                        +------+
+                                                        |R8 RCV| <- IGMP 
+                                                        +--+---+
+                                                           |
+                             +--------+               +----+---+
+                             |  R2    |               |  R4    |
+                 +-----------+        +---------------+        +------------+
+                 |           +----+---+               +----+---+            |
+                 |                |     \          /       |                |
+                 |                |      \        /        |                |
++-----+      +---+---+            |       \      /         |            +---+----+
+| R7  |      |   R1  |            |        \    /          |            |  R6    |
+| SRC +------+       |            |          XX            |            |        |
++-----+      +---+---+            |        /    \          |            +---+----+
+                 |                |       /      \         |                |
+                 |           +----+---+  /        \   +----+---+            |
+                 +-----------+  R3    | +           + |  R5    |            |
+                             |        +-+-----------+-+        +------------+
+                             +--------+               +----+---+
+                                                           |
+                                                        +--+---+
+                                                        |R9 RCV| <- IGMP 
+                                                        +------+
+
+                -> LAB brief:
+                 - R1/R2/R3/R4/R5/R6 in the MPLS core running OSPF/MPLS/RSVP
+                 - R1/R4/R5 has iBGP full mesh for inet-unicast/inet-vpn/inet-mvpn
+                 - R1/R4/R5 are MVPN PE running instance named video 
+                 - R1 is ingress PE. R4 and R5 are both egress PE
+                 - R7 is CE connected to the source and also runs as C-RP
+                 - MSDP running between R1 and R7 to share source active info 
+                 - R8 and R9 are CEs connected to receiver. Receiver is on R8/R9 themselves with static IGMP join 
+                 - ASM group (*, 224.100.100.1) (7.0.0.1, 224.100.100.1)
+                 - SSM group (7.0.0.1, 232.100.100.100)
+
+                -> Use cases:
+                 - spt-only / rpt-spt mode  
+                 - ASM / SSM group 
+                 - I-PMSI / S-PMSI 
+                 - Draft Rosen MVPN control/data plane trouble shooting 
+                 
+                -> Additional Instruction:
+                        -> To generate Ping traffic 
+                        >ping 224.100.100.1 bypass-routing logical-system src interface lt-0/0/10.7 interval .1 ttl 10   
+                        >ping 232.100.100.100 bypass-routing logical-system src interface lt-0/0/10.7 interval .1 ttl 10 
+
+                        -> To simulate multicast hosts
+                        #set logical-systems r9 protocols igmp interface xe-0/0/1.0 version 3
+                        #set logical-systems r9 protocols igmp interface xe-0/0/1.0 static group 224.100.100.1
+                        #set logical-systems r9 protocols igmp interface xe-0/0/1.0 static group 232.100.100.100 source 7.0.0.1
+                        (optional)
+                        #set logical-systems r9 protocols sap listen 224.100.100.1
+                        #set logical-systems r9 protocols sap listen 232.100.100.100
+
+
+**************************************************************************************************************************************
+[8 Multicast VPN Next Gen] file: 8_mcast_mvpn_ng.txt
+**************************************************************************************************************************************
+
+                -> Topology:
+
+                                                               +------+
+                                                               |R8 RCV| xe-/0/0/0 <- IGMP
+                                                               +--+---+
+                                                                  |
+                                    +--------+               +----+---+
+                                    |  R2    |               |  R4    |
+                        +-----------+        +---------------+        +------------+
+                        |           +----+---+               +----+---+            |
+                        |                |     \          /       |                |
+                        |                |      \        /        |                |
+       +-----+      +---+---+            |       \      /         |            +---+----+
+       | R7  |      |   R1  |            |        \    /          |            |  R6    |
+SRC----+ CE  +------+       |            |          XX            |            |        |
+       +-----+      +---+---+            |        /    \          |            +---+----+
+                        |                |       /      \         |                |
+                        |           +----+---+  /        \   +----+---+            |
+                        +-----------+  R3    | +           + |  R5    |            |
+                                    |        +-+-----------+-+        +------------+
+                                    +--------+               +----+---+
+                                                                  |
+                                                               +--+---+
+                                                               |R9 RCV| xe-0/0/1 <- IGMP 
+                                                               +------+
+
+                -> LAB brief:
+                 - R1/R2/R3/R4/R5/R6 in the MPLS core running OSPF/MPLS/RSVP
+                 - R1/R4/R5 has iBGP full mesh for inet-unicast/inet-vpn/inet-mvpn
+                 - R1/R4/R5 are MVPN PE running instance named video 
+                 - R7 is CE connected to the source and also runs as C-RP
+                 - R1 is ingress PE. 
+                 - MSDP running between R1 and R7 to share source active info 
+                 - R4 and R5 are both egress PE
+                 - R8 and R9 are CEs connected to receiver. Receivers are on R8/R9 themselves with static IGMP join 
+                 - Receivers can also be directly connected to egress PE R4/R5. IGMP join will be sent directly to R4/R5 interfaces inside VRF video 
+                 - ASM group (*, 224.100.100.1) (7.0.0.1, 224.100.100.1)
+                 - SSM group (7.0.0.1, 232.100.100.100)
+
+                -> Use cases:
+                 - spt-only / rpt-spt mode  
+                 - ASM / SSM group 
+                 - I-PMSI / S-PMSI 
+                 - NG-MVPN control/data plane trouble shooting 
+                 
+                -> Additional Instruction:
+                        -> To generate Ping traffic 
+                        >ping 224.100.100.1 bypass-routing logical-system src interface lt-0/0/10.7 interval .1 ttl 10   
+                        >ping 232.100.100.100 bypass-routing logical-system src interface lt-0/0/10.7 interval .1 ttl 10 
+
+                        -> To simulate multicast hosts
+                        #set logical-systems r9 protocols igmp interface xe-0/0/1.0 version 3
+                        #set logical-systems r9 protocols igmp interface xe-0/0/1.0 static group 224.100.100.1
+                        #set logical-systems r9 protocols igmp interface xe-0/0/1.0 static group 232.100.100.100 source 7.0.0.1
+                        (optional)
+                        #set logical-systems r9 protocols sap listen 224.100.100.1
+                        #set logical-systems r9 protocols sap listen 232.100.100.100
+						#set logical-systems r9 protocols sap listen 232.100.100.100

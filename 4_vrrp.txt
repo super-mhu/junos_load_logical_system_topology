@@ -1,0 +1,93 @@
+logical-systems {
+    host {
+        interfaces {
+            lt-0/0/10 {
+                unit 38 {
+                    encapsulation vlan;
+                    vlan-id 100;
+                    peer-unit 83;
+                    family inet {
+                        address 25.26.27.100/24;
+                    }
+                }
+            }
+        }
+    }
+    r1 {
+        interfaces {
+            lt-0/0/10 {
+                unit 18 {
+                    encapsulation vlan;
+                    vlan-id 100;
+                    peer-unit 81;
+                    family inet {
+                        address 25.26.27.2/24 {
+                            vrrp-group 1 {
+                                virtual-address 25.26.27.1;
+                                priority 200;
+                                accept-data;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    r2 {
+        interfaces {
+            lt-0/0/10 {
+                unit 28 {
+                    encapsulation vlan;
+                    vlan-id 100;        
+                    peer-unit 82;
+                    family inet {
+                        address 25.26.27.3/24 {
+                            vrrp-group 1 {
+                                virtual-address 25.26.27.1;
+                                priority 100;
+                                accept-data;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    sw {
+        interfaces {
+            lt-0/0/10 {
+                unit 81 {
+                    encapsulation vlan-bridge;
+                    vlan-id 100;
+                    peer-unit 18;
+                }
+                unit 82 {
+                    encapsulation vlan-bridge;
+                    vlan-id 100;
+                    peer-unit 28;
+                }
+                unit 83 {
+                    encapsulation vlan-bridge;
+                    vlan-id 100;
+                    peer-unit 38;
+                }
+            }
+        }
+        bridge-domains {
+            v100 {
+                interface lt-0/0/10.81;
+                interface lt-0/0/10.82;
+                interface lt-0/0/10.83;
+            }
+        }
+    }
+}
+chassis {
+    fpc 0 {
+        pic 0 {
+            tunnel-services {
+                bandwidth 1g;
+            }
+        }
+    }
+}

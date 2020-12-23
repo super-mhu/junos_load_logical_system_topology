@@ -1,0 +1,821 @@
+logical-systems {
+    ce1 {
+        interfaces {
+            lt-0/0/0 {
+                unit 71 {
+                    encapsulation ethernet;
+                    peer-unit 17;
+                    family inet {
+                        address 17.0.0.2/30;
+                    }
+                }
+            }
+        }
+        protocols {
+            bgp {
+                group ebgp {
+                    type external;
+                    local-address 17.0.0.2;
+                    export export-bgp;
+                    peer-as 65000;
+                    neighbor 17.0.0.1;
+                }
+            }
+        }
+        policy-options {
+            policy-statement export-bgp {
+                term 1 {
+                    from protocol static;
+                    then accept;
+                }
+            }
+        }
+        routing-options {
+            static {
+                route 7.7.7.7/32 reject;
+                route 77.77.77.77/32 reject;
+            }
+            autonomous-system 100;
+        }
+    }
+    ce2 {                               
+        interfaces {
+            lt-0/0/0 {
+                unit 86 {
+                    encapsulation ethernet;
+                    peer-unit 68;
+                    family inet {
+                        address 68.0.0.2/30;
+                    }
+                }
+            }
+        }
+        protocols {
+            bgp {
+                group ebgp {
+                    type external;
+                    local-address 68.0.0.2;
+                    export export-bgp;
+                    peer-as 65000;
+                    neighbor 68.0.0.1;
+                }
+            }
+        }
+        policy-options {
+            policy-statement export-bgp {
+                term 1 {
+                    from protocol static;
+                    then accept;
+                }
+            }
+        }
+        routing-options {
+            static {
+                route 8.8.8.8/32 reject;
+                route 88.88.88.88/32 reject;
+            }
+            autonomous-system 200;
+        }
+    }
+    r1 {
+        interfaces {
+            lt-0/0/0 {
+                unit 12 {
+                    encapsulation ethernet;
+                    peer-unit 21;
+                    family inet {
+                        address 12.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 13 {
+                    encapsulation ethernet;
+                    peer-unit 31;
+                    family inet {
+                        address 13.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 17 {               
+                    encapsulation ethernet;
+                    peer-unit 71;
+                    family inet {
+                        address 17.0.0.1/30;
+                    }
+                }
+            }
+            lo0 {
+                unit 1 {
+                    family inet {
+                        address 1.1.1.1/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            bgp {
+                group ibgp {
+                    type internal;
+                    local-address 1.1.1.1;
+                    family inet {
+                        unicast;
+                    }
+                    export nhs;
+                    neighbor 2.2.2.2;
+                    neighbor 4.4.4.4;
+                }
+                group ebgp {
+                    type external;
+                    local-address 17.0.0.1;
+                    peer-as 100;
+                    neighbor 17.0.0.2;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r1-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r1-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r1-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r1-r5 {
+                    to 5.5.5.5;
+                }
+                label-switched-path r1-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.12 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.13 {
+                        interface-type p2p;
+                    }
+                    interface lo0.1 {
+                        passive;
+                    }
+                }
+                reference-bandwidth 10g;
+            }
+            rsvp {
+                load-balance bandwidth;
+                interface lt-0/0/0.12 {
+                    link-protection;
+                }
+                interface lt-0/0/0.13 {
+                    link-protection;
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+            policy-statement nhs {
+                term 1 {
+                    then {
+                        next-hop self;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+            autonomous-system 65000;
+        }
+    }
+    r2 {
+        interfaces {
+            lt-0/0/0 {
+                unit 21 {
+                    encapsulation ethernet;
+                    peer-unit 12;
+                    family inet {
+                        address 12.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 23 {
+                    encapsulation ethernet;
+                    peer-unit 32;       
+                    family inet {
+                        address 23.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 24 {
+                    encapsulation ethernet;
+                    peer-unit 42;
+                    family inet {
+                        address 24.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 25 {
+                    encapsulation ethernet;
+                    peer-unit 52;
+                    family inet {
+                        address 25.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 2 {
+                    family inet {
+                        address 2.2.2.2/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            bgp {
+                group ibgp {
+                    type internal;
+                    local-address 2.2.2.2;
+                    cluster 2.2.2.2;
+                    neighbor 1.1.1.1;
+                    neighbor 6.6.6.6;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r2-r1 {
+                    to 1.1.1.1;
+                }
+                label-switched-path r2-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r2-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r2-r5 {
+                    to 5.5.5.5;
+                }
+                label-switched-path r2-r6 {
+                    to 6.6.6.6;
+                }                       
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.21 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.23 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.24 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.25 {
+                        interface-type p2p;
+                    }
+                    interface lo0.2 {
+                        passive;
+                    }
+                }
+                reference-bandwidth 10g;
+            }
+            rsvp {
+                load-balance bandwidth;
+                interface lt-0/0/0.21 {
+                    link-protection;
+                }
+                interface lt-0/0/0.23 {
+                    link-protection;
+                }
+                interface lt-0/0/0.24 {
+                    link-protection;
+                }
+                interface lt-0/0/0.25 {
+                    link-protection;
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+            autonomous-system 65000;
+        }
+    }
+    r3 {
+        interfaces {
+            lt-0/0/0 {                  
+                unit 31 {
+                    encapsulation ethernet;
+                    peer-unit 13;
+                    family inet {
+                        address 13.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 32 {
+                    encapsulation ethernet;
+                    peer-unit 23;
+                    family inet {
+                        address 23.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 34 {
+                    encapsulation ethernet;
+                    peer-unit 43;
+                    family inet {
+                        address 34.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 35 {
+                    encapsulation ethernet;
+                    peer-unit 53;
+                    family inet {
+                        address 35.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 3 {
+                    family inet {
+                        address 3.3.3.3/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r3-r1 {
+                    to 1.1.1.1;
+                }
+                label-switched-path r3-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r3-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r3-r5 {
+                    to 5.5.5.5;
+                }
+                label-switched-path r3-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.31 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.32 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.34 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.35 {
+                        interface-type p2p;
+                    }
+                    interface lo0.3 {
+                        passive;
+                    }
+                }
+                reference-bandwidth 10g;
+            }
+            rsvp {
+                load-balance bandwidth;
+                interface lt-0/0/0.31 {
+                    link-protection;
+                }
+                interface lt-0/0/0.32 {
+                    link-protection;
+                }
+                interface lt-0/0/0.34 {
+                    link-protection;
+                }
+                interface lt-0/0/0.35 {
+                    link-protection;
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+            autonomous-system 65000;
+        }
+    }
+    r4 {                                
+        interfaces {
+            lt-0/0/0 {
+                unit 42 {
+                    encapsulation ethernet;
+                    peer-unit 24;
+                    family inet {
+                        address 24.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 43 {
+                    encapsulation ethernet;
+                    peer-unit 34;
+                    family inet {
+                        address 34.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 45 {
+                    encapsulation ethernet;
+                    peer-unit 54;
+                    family inet {
+                        address 45.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 46 {
+                    encapsulation ethernet;
+                    peer-unit 64;
+                    family inet {
+                        address 46.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 4 {
+                    family inet {
+                        address 4.4.4.4/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            bgp {
+                group ibgp {
+                    type internal;
+                    local-address 4.4.4.4;
+                    cluster 4.4.4.4;
+                    neighbor 1.1.1.1;
+                    neighbor 6.6.6.6;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r4-r1 {
+                    to 1.1.1.1;         
+                }
+                label-switched-path r4-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r4-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r4-r5 {
+                    to 5.5.5.5;
+                }
+                label-switched-path r4-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.42 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.43 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.45;
+                    interface lt-0/0/0.46 {
+                        interface-type p2p;
+                    }
+                    interface lo0.4 {
+                        passive;
+                    }
+                }
+                reference-bandwidth 10g;
+            }
+            rsvp {
+                load-balance bandwidth;
+                interface lt-0/0/0.42 {
+                    link-protection;
+                }
+                interface lt-0/0/0.43 {
+                    link-protection;
+                }
+                interface lt-0/0/0.45 {
+                    link-protection;
+                }
+                interface lt-0/0/0.46 {
+                    link-protection;
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }                           
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+            autonomous-system 65000;
+        }
+    }
+    r5 {
+        interfaces {
+            lt-0/0/0 {
+                unit 52 {
+                    encapsulation ethernet;
+                    peer-unit 25;
+                    family inet {
+                        address 25.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 53 {
+                    encapsulation ethernet;
+                    peer-unit 35;
+                    family inet {
+                        address 35.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 54 {
+                    encapsulation ethernet;
+                    peer-unit 45;
+                    family inet {
+                        address 45.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 56 {
+                    encapsulation ethernet;
+                    peer-unit 65;
+                    family inet {
+                        address 56.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 5 {
+                    family inet {
+                        address 5.5.5.5/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r5-r1 {
+                    to 1.1.1.1;         
+                }
+                label-switched-path r5-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r5-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r5-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r5-r6 {
+                    to 6.6.6.6;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.53 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.54 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.56 {
+                        interface-type p2p;
+                    }
+                    interface lo0.5 {
+                        passive;
+                    }
+                    interface lt-0/0/0.52 {
+                        interface-type p2p;
+                    }
+                }
+                reference-bandwidth 10g;
+            }
+            rsvp {
+                load-balance bandwidth;
+                interface lt-0/0/0.52 {
+                    link-protection;
+                }
+                interface lt-0/0/0.53 {
+                    link-protection;
+                }
+                interface lt-0/0/0.54 {
+                    link-protection;
+                }
+                interface lt-0/0/0.56 {
+                    link-protection;
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }                   
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+            autonomous-system 65000;
+        }
+    }
+    r6 {
+        interfaces {
+            lt-0/0/0 {
+                unit 64 {
+                    encapsulation ethernet;
+                    peer-unit 46;
+                    family inet {
+                        address 46.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 65 {
+                    encapsulation ethernet;
+                    peer-unit 56;
+                    family inet {
+                        address 56.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 68 {
+                    encapsulation ethernet;
+                    peer-unit 86;
+                    family inet {
+                        address 68.0.0.1/30;
+                    }
+                }
+            }
+            lo0 {
+                unit 6 {
+                    family inet {
+                        address 6.6.6.6/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            bgp {
+                group ibgp {
+                    type internal;
+                    local-address 6.6.6.6;
+                    family inet {
+                        unicast;
+                    }
+                    export nhs;
+                    neighbor 2.2.2.2;
+                    neighbor 4.4.4.4;
+                }
+                group ebgp {            
+                    type external;
+                    local-address 68.0.0.1;
+                    peer-as 200;
+                    neighbor 68.0.0.2;
+                }
+            }
+            mpls {
+                no-propagate-ttl;
+                revert-timer 10;
+                label-switched-path r6-r1 {
+                    to 1.1.1.1;
+                }
+                label-switched-path r6-r2 {
+                    to 2.2.2.2;
+                }
+                label-switched-path r6-r3 {
+                    to 3.3.3.3;
+                }
+                label-switched-path r6-r4 {
+                    to 4.4.4.4;
+                }
+                label-switched-path r6-r5 {
+                    to 5.5.5.5;
+                }
+                interface all;
+            }
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/0.64 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/0.65 {
+                        interface-type p2p;
+                    }
+                    interface lo0.6 {
+                        passive;
+                    }
+                }
+                reference-bandwidth 10g;
+            }
+            rsvp {
+                load-balance bandwidth;
+                interface lt-0/0/0.64 {
+                    link-protection;
+                }
+                interface lt-0/0/0.65 {
+                    link-protection;
+                }
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }                       
+            }
+            policy-statement nhs {
+                term 1 {
+                    then {
+                        next-hop self;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+            autonomous-system 65000;
+        }
+    }
+}
+chassis {
+    fpc 0 {
+        pic 0 {
+            tunnel-services {
+                bandwidth 1g;
+            }
+        }
+    }
+}

@@ -1,0 +1,460 @@
+logical-systems {
+    r1 {
+        interfaces {
+            lt-0/0/10 {
+                unit 12 {
+                    encapsulation ethernet;
+                    peer-unit 21;
+                    family inet {
+                        address 12.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 13 {
+                    encapsulation ethernet;
+                    peer-unit 31;
+                    family inet {
+                        address 13.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 1 {
+                    family inet {
+                        address 1.1.1.1/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            ospf {
+                traffic-engineering;
+                area 0.0.0.1 {
+                    interface lt-0/0/10.12;
+                    interface lt-0/0/10.13;
+                    interface lo0.1 {
+                        passive;
+                    }
+                }
+                reference-bandwidth 10g;
+            }                           
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r2 {
+        interfaces {
+            lt-0/0/10 {
+                unit 21 {
+                    encapsulation ethernet;
+                    peer-unit 12;
+                    family inet {
+                        address 12.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 23 {
+                    encapsulation ethernet;
+                    peer-unit 32;
+                    family inet {
+                        address 23.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 24 {
+                    encapsulation ethernet;
+                    peer-unit 42;
+                    family inet {
+                        address 24.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 25 {
+                    encapsulation ethernet;
+                    peer-unit 52;
+                    family inet {
+                        address 25.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 2 {
+                    family inet {
+                        address 2.2.2.2/32;
+                    }
+                }                       
+            }
+        }
+        protocols {
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/10.23 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/10.24 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/10.25 {
+                        interface-type p2p;
+                    }
+                    interface lo0.2 {
+                        passive;
+                    }
+                }
+                area 0.0.0.1 {
+                    interface lt-0/0/10.21;
+                }
+                reference-bandwidth 10g;
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r3 {
+        interfaces {
+            lt-0/0/10 {
+                unit 31 {
+                    encapsulation ethernet;
+                    peer-unit 13;
+                    family inet {
+                        address 13.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 32 {
+                    encapsulation ethernet;
+                    peer-unit 23;
+                    family inet {
+                        address 23.0.0.2/30;
+                    }
+                    family mpls;        
+                }
+                unit 34 {
+                    encapsulation ethernet;
+                    peer-unit 43;
+                    family inet {
+                        address 34.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 35 {
+                    encapsulation ethernet;
+                    peer-unit 53;
+                    family inet {
+                        address 35.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 3 {
+                    family inet {
+                        address 3.3.3.3/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/10.32 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/10.34 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/10.35 {
+                        interface-type p2p;
+                    }
+                    interface lo0.3 {
+                        passive;
+                    }
+                }
+                area 0.0.0.1 {
+                    interface lt-0/0/10.31;
+                }
+                reference-bandwidth 10g;
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }                               
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r4 {
+        interfaces {
+            lt-0/0/10 {
+                unit 42 {
+                    encapsulation ethernet;
+                    peer-unit 24;
+                    family inet {
+                        address 24.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 43 {
+                    encapsulation ethernet;
+                    peer-unit 34;
+                    family inet {
+                        address 34.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 45 {
+                    encapsulation ethernet;
+                    peer-unit 54;
+                    family inet {
+                        address 45.0.0.1/30;
+                    }
+                    family mpls;
+                }
+                unit 46 {
+                    encapsulation ethernet;
+                    peer-unit 64;
+                    family inet {
+                        address 46.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 4 {
+                    family inet {
+                        address 4.4.4.4/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/10.42 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/10.43 {
+                        interface-type p2p;
+                    }
+                    interface lo0.4 {
+                        passive;
+                    }
+                }
+                area 0.0.0.2 {
+                    nssa;
+                    interface lt-0/0/10.45;
+                    interface lt-0/0/10.46;
+                }
+                reference-bandwidth 10g;
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r5 {
+        interfaces {
+            lt-0/0/10 {
+                unit 52 {
+                    encapsulation ethernet;
+                    peer-unit 25;
+                    family inet {
+                        address 25.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 53 {
+                    encapsulation ethernet;
+                    peer-unit 35;
+                    family inet {
+                        address 35.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 54 {
+                    encapsulation ethernet;
+                    peer-unit 45;
+                    family inet {
+                        address 45.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 56 {
+                    encapsulation ethernet;
+                    peer-unit 65;
+                    family inet {
+                        address 56.0.0.1/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 5 {
+                    family inet {
+                        address 5.5.5.5/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            ospf {
+                traffic-engineering;
+                area 0.0.0.0 {
+                    interface lt-0/0/10.52 {
+                        interface-type p2p;
+                    }
+                    interface lt-0/0/10.53 {
+                        interface-type p2p;
+                    }
+                    interface lo0.5 {
+                        passive;
+                    }
+                }
+                area 0.0.0.2 {
+                    nssa;
+                    interface lt-0/0/10.54;
+                    interface lt-0/0/10.56;
+                }
+                reference-bandwidth 10g;
+            }
+        }
+        policy-options {
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            forwarding-table {
+                export load-balance;
+            }
+        }
+    }
+    r6 {
+        interfaces {
+            lt-0/0/10 {
+                unit 64 {
+                    encapsulation ethernet;
+                    peer-unit 46;       
+                    family inet {
+                        address 46.0.0.2/30;
+                    }
+                    family mpls;
+                }
+                unit 65 {
+                    encapsulation ethernet;
+                    peer-unit 56;
+                    family inet {
+                        address 56.0.0.2/30;
+                    }
+                    family mpls;
+                }
+            }
+            lo0 {
+                unit 6 {
+                    family inet {
+                        address 6.6.6.6/32;
+                    }
+                }
+            }
+        }
+        protocols {
+            ospf {
+                traffic-engineering;
+                area 0.0.0.2 {
+                    nssa;
+                    interface lt-0/0/10.64;
+                    interface lt-0/0/10.65;
+                    interface lo0.6 {
+                        passive;
+                    }
+                }
+                export export;
+                reference-bandwidth 10g;
+            }
+        }
+        policy-options {
+            policy-statement export {
+                term 1 {
+                    from protocol static;
+                    then accept;
+                }
+            }
+            policy-statement load-balance {
+                term 1 {
+                    then {
+                        load-balance per-packet;
+                    }
+                }
+            }
+        }
+        routing-options {
+            static {
+                route 10.0.0.0/8 reject;
+            }
+            forwarding-table {
+                export load-balance;    
+            }
+        }
+    }
+}
+chassis {
+    fpc 0 {
+        pic 0 {
+            tunnel-services {
+                bandwidth 1g;
+            }
+        }
+    }
+}
